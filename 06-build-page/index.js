@@ -4,15 +4,18 @@ const path = require('path');
 
 const targetDirPath = path.resolve(__dirname, 'project-dist')
 
-const outputDirCreated = fsp.mkdir(targetDirPath, { recursive: true });
-
 const componentsDir = path.resolve(__dirname, 'components');
 
 const templateFile = path.resolve(__dirname, 'template.html');
 
 const stylesDir = path.resolve(__dirname, 'styles');
-const stylesOutput = path.resolve(__dirname, 'project-dist', 'bundle.css');
+const stylesOutput = path.resolve(targetDirPath, 'bundle.css');
 const stylesStream = fs.createWriteStream(stylesOutput);
+
+const indexPath = path.resolve(targetDirPath, 'index.html');
+const indexStream = fs.createWriteStream(indexPath);
+
+const outputDirCreated = fsp.mkdir(targetDirPath, { recursive: true });
 
 function readFiles(dirPath) {
   const ret = fsp.readdir(dirPath, { withFileTypes: true })
@@ -26,19 +29,21 @@ function loadComponent(name, pth) {
   return ret;
 }
 
-// Bundle styles
-readFiles(stylesDir)
-  .then(files => files.filter(({ basename }) => path.extname(basename) === '.css'))
+// Combine styles
+Promise.all([readFiles(stylesDir), outputDirCreated])
+  .then(([files]) => files.filter(({ basename }) => path.extname(basename) === '.css'))
   .then(files => Promise.all(files.map(({ path }) => fsp.readFile(path))))
   .then(contents => contents.forEach(content => stylesStream.write(content)));
 
 // Load components
-const components = readFiles(componentsDir)
-  .then(files => files.filter(({ basename }) => path.extname(basename) === '.html'))
+const components = Promise.all([readFiles(componentsDir), outputDirCreated])
+  .then(([files]) => files.filter(({ basename }) => path.extname(basename) === '.html'))
   .then(files => files.map(({ path: pth, basename }) => loadComponent(path.basename(basename, '.html'), pth)))
   .then(componentsPromises => Promise.all(componentsPromises))
   .then(Object.fromEntries);
 
 // Translate template.html
-Promise.all([fsp.readFile(templateFile, 'utf-8'), components])
-  .then(([content, components]) => { });
+Promise.all([fsp.readFile(templateFile, 'utf-8'), components, outputDirCreated])
+  .then(([content, components]) => content.replace(/\{\{(.*?)\}\}/g, (_, template) => components[template]))
+  .then((content) => indexStream.write(content));
+
