@@ -17,7 +17,12 @@ function readFilePaths(dirPath) {
 const sourceDirPath = resolve(__dirname, 'files');
 const targetDirPath = resolve(__dirname, 'files-copy');
 const sourcePaths = readFilePaths(sourceDirPath);
-const targetDirCreated = fsp.mkdir(targetDirPath, { recursive: true });
+const targetDirCreated = fsp
+  .rm(targetDirPath, {
+    recursive: true,
+    force: true,
+  })
+  .then(() => fsp.mkdir(targetDirPath, { recursive: true }));
 
 Promise.all([sourcePaths, targetDirCreated])
   .then(([files]) => files)
