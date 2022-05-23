@@ -1,3 +1,5 @@
+// Не разобравшись в промисах не лезь в Async/Await
+
 const { resolve, extname } = require('path');
 const fsp = require('fs/promises');
 

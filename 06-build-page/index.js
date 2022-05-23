@@ -1,3 +1,6 @@
+// Не разобравшись в промисах не лезь в Async/Await
+// Как бы тебе не хотелось
+
 const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
