@@ -72,16 +72,16 @@ function createDirectory(structure, targetPath) {
     const dirPath = structure.name;
     const sourceDirBasename = path.basename(structure.name);
     const newRootPath = path.resolve(targetPath, sourceDirBasename);
-    // console.log('Source Dir Basename: ', sourceDirBasename)
-    // console.log('Target Dir:    ', targetPath);
-    // console.log('New Root Path: ', newRootPath);
-    const folderPromise = fsp.mkdir(newRootPath, { recursive: true }).then(() => {
-      return files.map(name => fsp.copyFile(name, path.resolve(newRootPath, path.basename(name))));
+
+    const folderPromise = fsp.rm(newRootPath, { force: true, recursive: true }).then(() => {
+      return fsp.mkdir(newRootPath, { recursive: true }).then(() => {
+        return files.map(name => fsp.copyFile(name, path.resolve(newRootPath, path.basename(name))));
+      });
     });
+
     folderPromise.then((filesPromises) => Promise.all(filesPromises)).then(result => {
       return subdirs.map(subDirectory => createDirectory(subDirectory, newRootPath))
-    })
-
+    });
   });
 }
 
