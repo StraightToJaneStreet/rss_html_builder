@@ -9,11 +9,13 @@ const componentsDir = path.resolve(__dirname, 'components');
 const templateFile = path.resolve(__dirname, 'template.html');
 
 const stylesDir = path.resolve(__dirname, 'styles');
-const stylesOutput = path.resolve(targetDirPath, 'bundle.css');
+const stylesOutput = path.resolve(targetDirPath, 'style.css');
 const stylesStream = fs.createWriteStream(stylesOutput);
 
 const indexPath = path.resolve(targetDirPath, 'index.html');
 const indexStream = fs.createWriteStream(indexPath);
+
+const assetsDir = path.resolve(__dirname, 'assets');
 
 const outputDirCreated = fsp.mkdir(targetDirPath, { recursive: true });
 
@@ -27,6 +29,57 @@ function readFiles(dirPath) {
 function loadComponent(name, pth) {
   const ret = fsp.readFile(pth).then(content => [name, content]);
   return ret;
+}
+
+function makeDirectory(pth) {
+  return fsp.mkdir(pth, { recursive: true })
+}
+
+function scanDirectory(pth) {
+  return new Promise((resolve) => {
+    const files = [];
+
+    const ret = fsp.readdir(pth, { withFileTypes: true });
+
+    const finalize = (subdirsContent) => resolve({ name: pth, files, subdirs: subdirsContent });
+
+    const handleEntries = (entries) => {
+      const subPromises = [];
+      entries.forEach((entry) => {
+        if (entry.isFile()) {
+          files.push(path.resolve(pth, entry.name));
+        } else {
+          const subPromise = scanDirectory(path.resolve(pth, entry.name));
+          subPromises.push(subPromise);
+        }
+      });
+
+      Promise.all(subPromises).then(finalize);
+    }
+
+    ret.then(handleEntries);
+  });
+}
+
+function createDirectory(structure, targetPath) {
+  return new Promise((resolve) => {
+    const subPromises = [];
+    const files = structure.files;
+    const subdirs = structure.subdirs;
+    const dirPath = structure.name;
+    const sourceDirBasename = path.basename(structure.name);
+    const newRootPath = path.resolve(targetPath, sourceDirBasename);
+    // console.log('Source Dir Basename: ', sourceDirBasename)
+    // console.log('Target Dir:    ', targetPath);
+    // console.log('New Root Path: ', newRootPath);
+    const folderPromise = fsp.mkdir(newRootPath, { recursive: true }).then(() => {
+      return files.map(name => fsp.copyFile(name, path.resolve(newRootPath, path.basename(name))));
+    });
+    folderPromise.then((filesPromises) => Promise.all(filesPromises)).then(result => {
+      return subdirs.map(subDirectory => createDirectory(subDirectory, newRootPath))
+    })
+
+  });
 }
 
 // Combine styles
@@ -47,3 +100,5 @@ Promise.all([fsp.readFile(templateFile, 'utf-8'), components, outputDirCreated])
   .then(([content, components]) => content.replace(/\{\{(.*?)\}\}/g, (_, template) => components[template]))
   .then((content) => indexStream.write(content));
 
+// Copy assets
+scanDirectory(assetsDir).then(structure => createDirectory(structure, targetDirPath));
