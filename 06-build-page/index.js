@@ -42,7 +42,7 @@ async function buildPage() {
       if (!file.isFile()) {
         const resultCopyUrl = path.join(urlCopyFile, 'assets', file.name);
         await mkdir(path.join(resultCopyUrl), {recursive: true});
-        readAssets(path.join(urlFiles, file.name), resultCopyUrl);
+        readAssets(path.join(url, file.name), resultCopyUrl);
       } else {
         await copyFile (path.join(url, file.name), path.join(copyUrl, file.name));
       }
