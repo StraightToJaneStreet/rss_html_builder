@@ -13,7 +13,7 @@ async function buildPage() {
 
   const readCopyFiles = await readdir(urlCopyFile);
   for (let copyFile of readCopyFiles) {
-    await rm(path.join(urlCopyFile, copyFile), {recursive: true});
+    await rm(path.join(urlCopyFile, copyFile), {recursive: true, force: true});
   }
 
 
