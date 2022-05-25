@@ -21,5 +21,5 @@ const rootPath = resolve(__dirname, 'secret-folder')
 fsp.readdir(rootPath)
   .then(entries => readStats(rootPath, entries))
   .then(items => items.filter(({ isDir }) => !isDir))
-  .then(items => items.map(({ name, size }) => ({ name, ext: extname(name), size})))
+  .then(items => items.map(({ name, size }) => ({ name, ext: extname(name).replace('.', ''), size})))
   .then(items => items.forEach(({name, ext, size}) => console.log(`${name} - ${ext} - ${size}`)));
