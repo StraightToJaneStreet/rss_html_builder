@@ -3,20 +3,20 @@ const { readdir, mkdir, rm, copyFile, readFile } = require('fs/promises');
 const fs = require('fs');
 
 async function buildPage() {
-  
+
   const urlFiles = path.join(__dirname, 'assets');
   const urlCopyFile = path.join(__dirname, 'project-dist');
   const urlHtml = path.join(__dirname, 'template.html');
   const urlComponents = path.join(__dirname, 'components');
 
   await mkdir(urlCopyFile, {recursive: true});
-  
+
   const readCopyFiles = await readdir(urlCopyFile);
   for (let copyFile of readCopyFiles) {
     await rm(path.join(urlCopyFile, copyFile), {recursive: true});
-  } 
+  }
 
-  
+
 
   async function readHtml(url) {
     const writableStreamHtml = fs.createWriteStream(path.join(urlCopyFile, 'index.html'));
@@ -24,7 +24,7 @@ async function buildPage() {
     const readHtmlComp = await readdir(urlComponents, {withFileTypes: true});
     for (let htmlFile of readHtmlComp) {
       if(htmlFile.isFile()){
-    
+
         const urlFileHtml = path.join(urlComponents, htmlFile.name);
         const streamHtmlComponents = await readFile(urlFileHtml, {encoding: 'utf-8'});
         const nameFile = htmlFile.name.split('.');
@@ -46,14 +46,14 @@ async function buildPage() {
       } else {
         await copyFile (path.join(url, file.name), path.join(copyUrl, file.name));
       }
-     
+
     }
   }
   readAssets(urlFiles);
 
   const urlReadCss = path.join(__dirname, 'styles');
   const writableStream = fs.createWriteStream(path.join(urlCopyFile, 'style.css'));
-  
+
   const readCss = await readdir(urlReadCss, {withFileTypes: true});
   for (let cssFile of readCss) {
     if (cssFile.isFile() && cssFile.name.includes('css')) {
@@ -63,7 +63,7 @@ async function buildPage() {
         writableStream.write(data);
       });
     }
-  } 
+  }
 
 
 }
